@@ -13,14 +13,17 @@ namespace Client.Extensions
             var headers = context.Response.Headers;
             var nonce = context.GetNonce();
 
+            // Identify if the request is for Swagger
+            var isSwaggerRequest = context.Request.Path.StartsWithSegments("/swagger");
+
             string csp;
-            if (isDevelopment)
+
+            if (isDevelopment || isSwaggerRequest)
             {
-                // Allow all localhost connections during development
+                // Allow more relaxed CSP settings for Swagger and development
                 csp = $"default-src 'self'; " +
-                      $"style-src 'self' 'nonce-{nonce}' 'unsafe-inline'; " +
-                      $"script-src 'self' 'nonce-{nonce}' 'unsafe-inline' 'unsafe-eval' http://localhost/; " +
-                      // Attempt to allow all subdomains and ports (not officially supported for ports)
+                      $"style-src 'self' 'unsafe-inline'; " + // Allow inline styles
+                      $"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " + // Allow inline scripts and eval
                       $"connect-src 'self' ws: wss: http://localhost:*";
             }
             else
@@ -29,8 +32,8 @@ namespace Client.Extensions
                 csp = $"default-src 'none'; " +
                       $"font-src 'self'; " +
                       $"img-src 'self' data:; " +
-                      $"style-src 'self' 'nonce-{nonce}' 'unsafe-inline'; " +
-                      $"script-src 'nonce-{nonce}'; " +
+                      $"style-src 'self' 'nonce-{nonce}'; " + // Use nonce for inline styles
+                      $"script-src 'self' 'nonce-{nonce}'; " + // Use nonce for inline scripts
                       $"connect-src 'self';";
             }
 
@@ -38,16 +41,31 @@ namespace Client.Extensions
             headers.Append("Cache-Control", "no-store");
         }
 
+
+
         public static void SetStaticFileSecurityHeaders(this HttpContext context, bool isDevelopment)
         {
             var headers = context.Response.Headers;
 
             SetGeneralSecurityHeaders(headers, isDevelopment);
 
-            headers.Append("Content-Security-Policy", "default-src 'none';");
+            // Identify if the request is for Swagger
+            var isSwaggerRequest = context.Request.Path.StartsWithSegments("/swagger");
+
+            if (isSwaggerRequest)
+            {
+                // Allow more relaxed CSP settings for Swagger
+                headers.Append("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval';");
+            }
+            else
+            {
+                // Default restrictive CSP for other static files
+                headers.Append("Content-Security-Policy", "default-src 'none';");
+            }
 
             headers.Append("Cache-Control", "public");
         }
+
 
         private static void SetGeneralSecurityHeaders(IHeaderDictionary headers, bool isDevelopment)
         {
