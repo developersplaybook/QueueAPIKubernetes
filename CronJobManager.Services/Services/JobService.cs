@@ -14,7 +14,7 @@ namespace CronJobManager.Services.Services
         private IRestClient _restClient;
         private readonly ServiceSettings _serviceSettings;
         private readonly ILogger _logger;
-        private const int TimeoutInMilliseconds = 10000; // 10 seconds
+        private static readonly TimeSpan TimeoutInMilliseconds = TimeSpan.FromMilliseconds(10000); // 10 seconds
 
         public JobService(IRestClientFactory restClientFactory, ServiceSettings serviceSettings, ILoggerFactory loggerFactory)
         {
