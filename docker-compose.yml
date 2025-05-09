@@ -1,0 +1,37 @@
+services:
+  server:
+    image: ${DOCKER_REGISTRY-}server
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__CarDbConnection=Server=host.docker.internal,1433;Database=CarDb;User Id=sa;Password=StrongPassword@123;Max Pool Size=100;Encrypt=false
+      - ConnectionStrings__QueueDbConnection=Server=host.docker.internal,1433;Database=QueueDb;User Id=sa;Password=StrongPassword@123;Max Pool Size=100;Encrypt=false
+
+  client:
+    image: ${DOCKER_REGISTRY-}client
+    build:
+      context: .
+      dockerfile: Client/Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80
+      - ConnectionStrings__ASPNETDbConnection=Server=host.docker.internal,1433;Database=ASPNETDb;User Id=sa;Password=StrongPassword@123;Max Pool Size=100;Encrypt=false
+      - ConnectionStrings__QueueDbConnection=Server=host.docker.internal,1433;Database=QueueDb;User Id=sa;Password=StrongPassword@123;Max Pool Size=100;Encrypt=false
+    depends_on:
+      - server
+ 
+  TaskScheduler:
+    image: ${DOCKER_REGISTRY-}taskscheduler
+    build:
+      context: .
+      dockerfile: TaskScheduler/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ClientBaseUrl=http://client:80/api/
+    depends_on:
+      - client

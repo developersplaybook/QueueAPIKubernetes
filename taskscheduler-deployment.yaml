@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: taskscheduler
+  name: taskscheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taskscheduler
+  template:
+    metadata:
+      labels:
+        app: taskscheduler
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+          image: taskscheduler:latest-k8s
+          name: taskscheduler
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+      restartPolicy: Always
